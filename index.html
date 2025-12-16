@@ -745,7 +745,15 @@
         function toggleComplete(e, id) { e.stopPropagation(); vibrate(); const item = appData.itinerary.find(i => i.id === id); if(item) { item.completed = !item.completed; if (item.completed) { saveData(); const stamp = document.getElementById(`stamp-${id}`); if(stamp) { stamp.classList.remove('stamp-visible'); void stamp.offsetWidth; stamp.classList.add('stamp-animate'); } } else { saveData(); } } }
         function toggleTask(e, itemId, taskIdx) { e.stopPropagation(); const item = appData.itinerary.find(i => i.id === itemId); if(item && item.tasks[taskIdx]) { item.tasks[taskIdx].done = !item.tasks[taskIdx].done; const allDone = item.tasks.every(t => t.done); if (allDone && !item.completed) { item.completed = true; saveData(); } else { saveData(); } } }
         function openGuide(e, title) { e.stopPropagation(); Swal.fire({ title: `<span class="font-serif text-theme-dark"><i class="fa-solid fa-robot mr-2 text-m-spot"></i>${title}</span>`, html: `<div class="text-left"><p class="text-sm text-gray-500 mb-4">正在為您尋找關於 ${title} 的情報...</p><div class="grid grid-cols-2 gap-3"><a href="https://www.google.com/search?q=${encodeURIComponent(title + ' 必吃 美食')}" target="_blank" class="p-3 bg-red-50 border border-red-100 rounded-xl flex flex-col items-center gap-1 hover:bg-red-100 transition-colors"><i class="fa-solid fa-utensils text-red-400 text-xl"></i><span class="text-xs font-bold text-red-600">找必吃</span></a><a href="https://www.google.com/search?q=${encodeURIComponent(title + ' 必買 伴手禮')}" target="_blank" class="p-3 bg-green-50 border border-green-100 rounded-xl flex flex-col items-center gap-1 hover:bg-green-100 transition-colors"><i class="fa-solid fa-bag-shopping text-green-400 text-xl"></i><span class="text-xs font-bold text-green-600">找必買</span></a><a href="https://www.google.com/search?q=${encodeURIComponent(title + ' 歷史 故事')}" target="_blank" class="p-3 bg-blue-50 border border-blue-100 rounded-xl flex flex-col items-center gap-1 hover:bg-blue-100 transition-colors"><i class="fa-solid fa-book-open text-blue-400 text-xl"></i><span class="text-xs font-bold text-blue-600">看故事</span></a><a href="https://www.instagram.com/explore/tags/${encodeURIComponent(title)}/" target="_blank" class="p-3 bg-pink-50 border border-pink-100 rounded-xl flex flex-col items-center gap-1 hover:bg-pink-100 transition-colors"><i class="fa-brands fa-instagram text-pink-400 text-xl"></i><span class="text-xs font-bold text-pink-600">看IG圖</span></a></div></div>`, showConfirmButton: false, showCloseButton: true, customClass: { popup: 'rounded-3xl' } }); }
-        function handleFabClick() { if(currentView==='plan') openEdit('plan'); else if(currentView==='wallet') openEdit('wallet'); else if(currentView==='info') openEdit('info'); else if(currentView==='home') openEdit('shop'); }
+        
+        async function handleFabClick() { 
+            // 由於這是 FAB 按鈕，保持原來的 router 邏輯即可
+            if(currentView==='plan') openEdit('plan'); 
+            else if(currentView==='wallet') openEdit('wallet'); 
+            else if(currentView==='info') openEdit('info'); 
+            else if(currentView==='home') openEdit('shop'); 
+        }
+
         function toggleShop(e, id) { e.stopPropagation(); const i = appData.shopping.find(x=>x.id===id); if(i){ i.checked=!i.checked; saveData(); } }
         function toggleCity() { appData.weatherCity = appData.weatherCity === 'Fukuoka' ? 'Kumamoto' : 'Fukuoka'; saveData(); }
         async function changeRate() { const {value} = await Swal.fire({title:'設定匯率', input:'number', inputValue:appData.rate, confirmButtonColor:'#54463D'}); if(value) { appData.rate = parseFloat(value); saveData(); } }
@@ -782,27 +790,45 @@
         function initSwipeToDismiss() { const h=document.getElementById('sheet-handle'), s=document.getElementById('edit-sheet'); let sy=0, cy=0; h.addEventListener('touchstart',e=>{sy=e.touches[0].clientY;s.style.transition='none';}); h.addEventListener('touchmove',e=>{cy=e.touches[0].clientY; const d=cy-sy; if(d>0)s.style.transform=`translateY(${d}px)`;}); h.addEventListener('touchend',e=>{s.style.transition='transform 0.3s ease'; const d=cy-sy; if(d>100)closeSheet(); else s.style.transform='';}); }
         
         // **IMPORTANT: Removed manual rendering (e.g., renderPlan()) after saveData(), as Firebase onSnapshot handles it.**
-        function savePlan() { 
+        async function savePlan() { 
             const id=document.getElementById('form-id').value, tags=document.getElementById('form-tags').value?document.getElementById('form-tags').value.split(/,|，/).map(t=>t.trim()).filter(Boolean):[], tasksLines=document.getElementById('form-tasks').value?document.getElementById('form-tasks').value.split('\n').filter(t=>t.trim()):[]; 
             let oldTasks=[]; if(id){const old=appData.itinerary.find(i=>i.id==id);if(old)oldTasks=old.tasks||[];} 
             const tasks=tasksLines.map(text=>{const existing=oldTasks.find(t=>t.text===text);return{text,done:existing?existing.done:false};}); 
             const form={day:appData.currentDay,time:document.getElementById('form-time').value,type:document.getElementById('form-type').value,title:document.getElementById('form-title').value,duration:document.getElementById('form-duration').value,budget:document.getElementById('form-budget').value,travelTime:document.getElementById('form-travel').value,mapUrl:document.getElementById('form-map').value,tags,tasks}; 
             if(id){const idx=appData.itinerary.findIndex(i=>i.id==id);if(idx>-1)appData.itinerary[idx]={...appData.itinerary[idx],...form};}else appData.itinerary.push({id:Date.now(),...form}); 
-            saveData(); 
-            closeSheet(); 
+            
+            try {
+                await saveData();
+                closeSheet();
+            } catch(e) {
+                // 儲存失敗的錯誤已在 saveData 中處理
+            }
         }
-        function saveNote() { 
+        
+        async function saveNote() { 
             const text=document.getElementById('note-text').value, preview=document.getElementById('note-preview'), img=preview.src&&!preview.classList.contains('hidden')?preview.src:null; 
             appData.note = {text, img}; 
-            saveData(); 
-            closeSheet(); 
+            
+            try {
+                await saveData();
+                closeSheet();
+            } catch(e) {
+                // 儲存失敗的錯誤已在 saveData 中處理
+            }
         }
-        function saveShop() { 
+        
+        async function saveShop() { 
             const id=document.getElementById('shop-id').value, text=document.getElementById('shop-text').value, preview=document.getElementById('shop-preview'), img=preview.src&&!preview.classList.contains('hidden')?preview.src:null; 
             if(id){const idx=appData.shopping.findIndex(i=>i.id==id);if(idx>-1)appData.shopping[idx]={...appData.shopping[idx], text, img};}else appData.shopping.push({id:Date.now(), text, img, checked:false}); 
-            saveData(); 
-            closeSheet(); 
+            
+            try {
+                await saveData();
+                closeSheet();
+            } catch(e) {
+                // 儲存失敗的錯誤已在 saveData 中處理
+            }
         }
+        
         function deleteItem(type, id) { 
             if(!id) return; 
             if(type==='shop') appData.shopping=appData.shopping.filter(i=>i.id!=id); 
@@ -811,14 +837,20 @@
             saveData(); 
             closeSheet(); 
         }
-        function saveExpense() { 
+        
+        async function saveExpense() { 
             const t=document.getElementById('exp-title').value, a=document.getElementById('exp-amount').value, ty=document.getElementById('exp-type').value; 
             if(t&&a) { 
                 appData.expenses.push({id:Date.now(), title:t, amount:a, type:ty}); 
-                saveData(); 
-                closeSheet(); 
+                try {
+                    await saveData();
+                    closeSheet();
+                } catch(e) {
+                    // 儲存失敗的錯誤已在 saveData 中處理
+                }
             } 
         }
+        
         async function saveVoucher() { 
             const id=document.getElementById('vou-id').value, t=document.getElementById('vou-title').value, ty=document.getElementById('vou-type').value, txt=document.getElementById('vou-text').value, preview=document.getElementById('vou-preview'), f=document.getElementById('vou-file').files[0]; 
             // 檢查標題是否為空
@@ -837,15 +869,24 @@
                 appData.vouchers.push({id:Date.now(), title:t, type:ty, text:txt, img}); 
             } 
             
-            saveData(); 
-            closeSheet(); 
+            try {
+                await saveData(); 
+                closeSheet();
+            } catch(e) {
+                // 儲存失敗的錯誤已在 saveData 中處理
+            }
         }
-        function saveBudget() { 
+        
+        async function saveBudget() { 
             const v=document.getElementById('budget-in').value; 
             if(v){ 
                 appData.budget=parseInt(v); 
-                saveData(); 
-                closeSheet(); 
+                try {
+                    await saveData();
+                    closeSheet(); 
+                } catch(e) {
+                    // 儲存失敗的錯誤已在 saveData 中處理
+                }
             } 
         }
 
