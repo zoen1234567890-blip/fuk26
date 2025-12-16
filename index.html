@@ -245,20 +245,40 @@
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
         // setLogLevel('Debug'); // Uncomment for debugging Firestore issues
 
-        // --- Canvas Environment Variables ---
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // --- HARDCODED FALLBACK CONFIG for External Deployment (GitHub Pages) ---
+        const FALLBACK_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCF5oVGcIQibf8RKzLCXbXcigHxpIBLfQM",
+            authDomain: "fuk2026-e0563.firebaseapp.com",
+            projectId: "fuk2026-e0563",
+            storageBucket: "fuk2026-e0563.firebasestorage.app",
+            messagingSenderId: "90614270826",
+            appId: "1:90614270826:web:650e7b13dd785b1d06b313",
+            measurementId: "G-LCDDWYNQXG"
+        };
+        const FALLBACK_APP_ID = 'fuk2026-e0563'; // Use projectId as a fixed app ID for external environments
+
+        // --- Determine Config Based on Environment ---
+        const isCanvasEnv = typeof __firebase_config !== 'undefined';
+
+        const configToUse = isCanvasEnv 
+            ? JSON.parse(__firebase_config) 
+            : FALLBACK_FIREBASE_CONFIG;
+            
+        const appIdToUse = isCanvasEnv 
+            ? (typeof __app_id !== 'undefined' ? __app_id : FALLBACK_APP_ID) 
+            : FALLBACK_APP_ID;
+            
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- Firebase Initialization ---
-        const app = initializeApp(firebaseConfig);
+        const app = initializeApp(configToUse);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
         // **共用行程的唯一 ID**
         const TRIP_ID = 'kyushu_2026_shared_plan_A';
-        // Correct collaborative path: /artifacts/{appId}/public/data/plans/{TRIP_ID}
-        const TRIP_DOC_REF = doc(db, 'artifacts', appId, 'public', 'data', 'plans', TRIP_ID); 
+        // Correct collaborative path, using determined appId: /artifacts/{appId}/public/data/plans/{TRIP_ID}
+        const TRIP_DOC_REF = doc(db, 'artifacts', appIdToUse, 'public', 'data', 'plans', TRIP_ID); 
 
         // --- Global State and Constants ---
         const vibrate = () => { if(navigator.vibrate) navigator.vibrate(5); };
@@ -301,6 +321,7 @@
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
+                    // For GitHub Pages deployment, this signs in anonymously using the hardcoded config.
                     await signInAnonymously(auth);
                 }
                 isAuthReady = true;
