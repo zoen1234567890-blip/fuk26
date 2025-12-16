@@ -686,11 +686,9 @@
         // --- Other Modules ---
         function renderMap() { 
             const container = document.getElementById('app-container');
-            const chipsHtml = FILTER_OPTIONS.map(opt => `<button onclick="toggleMapFilter('${opt.key}')" class="map-filter-chip whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold border transition-all shadow-sm ${mapFilters === opt.key ? `${opt.color} text-white border-transparent active` : 'bg-white text-theme-dark border-gray-200'}">${opt.label}</button>`).join('');
             
-            // 1. Inject map container and UI elements
+            // 1. Inject map container and UI elements (Removed filter chips section)
             container.innerHTML = `
-                <div class="absolute top-4 left-4 right-4 z-[500] flex gap-2 overflow-x-auto no-scrollbar pb-2">${chipsHtml}</div>
                 <div id="map" class="w-full h-full z-10"></div>
                 <button onclick="locateMe()" class="absolute bottom-36 right-4 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-blue-500 z-[400] tap-effect"><i class="fa-solid fa-crosshairs"></i></button>
             `;
@@ -704,8 +702,8 @@
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '' }).addTo(mapInstance); 
                 
                 const bounds=[]; const latlngs=[];
+                // Items filter only based on day (appData.currentDay)
                 let dayItems = appData.itinerary.filter(i => i.day === appData.currentDay).sort((a, b) => a.time.localeCompare(b.time));
-                if(mapFilters) dayItems = dayItems.filter(i => i.type === mapFilters);
                 
                 dayItems.forEach((item, index) => { 
                     const lat = item.lat || (33.5902 + (Math.random()-0.5)*0.05); 
@@ -715,8 +713,8 @@
                     L.marker(point, {icon: icon}).addTo(mapInstance).bindPopup(`<b>${item.title}</b><br>${item.time}`); 
                 }); 
                 
-                // Draw polyline
-                if(!mapFilters && latlngs.length > 1) {
+                // Draw polyline (Always draw if more than one point)
+                if(latlngs.length > 1) {
                     L.polyline(latlngs, {color: '#8EA4B5', weight: 4, opacity: 0.8, dashArray: '10, 10'}).addTo(mapInstance);
                 }
                 
