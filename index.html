@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>九州 2026 | 手帳  (Shared)</title>
+    <title>九州 2026 | 手帳 V44 (Shared)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -432,7 +432,7 @@
         
         function saveData(silent = false) { 
             // 停止使用 LocalStorage 寫入，改為寫入 Firestore
-            TRIP_DOC_REF.set(appData, { merge: true })
+            return TRIP_DOC_REF.set(appData, { merge: true })
                 .then(() => {
                     if (!silent) {
                         console.log("數據已成功寫入雲端。");
@@ -441,8 +441,8 @@
                 .catch((error) => {
                     console.error("寫入雲端失敗:", error);
                     Swal.fire('錯誤', '無法儲存您的變更。', 'error');
+                    throw error; // 拋出錯誤以便調用者知道失敗
                 });
-            // 注意：不需要再呼叫 LocalStorage.setItem
         }
         // ----------------------------------------------------
 
