@@ -445,6 +445,28 @@
             router('plan'); 
         });
 
+        // --- Image Full-Screen Modal ---
+        function openImageModal(imgSrc, title) {
+            if (!imgSrc) return;
+            Swal.fire({
+                title: title || '檢視圖片',
+                imageUrl: imgSrc,
+                imageAlt: title || '憑證/購物圖片',
+                imageWidth: '95%',
+                imageHeight: 'auto',
+                showCloseButton: true,
+                showConfirmButton: false,
+                customClass: {
+                    image: '!max-w-full !max-h-[90vh] object-contain', 
+                    popup: '!bg-transparent backdrop-blur-md !shadow-none',
+                    container: 'backdrop-blur-sm'
+                },
+                target: 'body',
+                backdrop: true,
+            });
+        }
+        window.openImageModal = openImageModal; 
+
         function initDecorations() {
             const layer = document.getElementById('sticker-layer') || document.createElement('div');
             layer.id = 'sticker-layer';
@@ -642,36 +664,70 @@
         function getWeatherWidgetHTML() { const data = WEATHER_DATA[appData.weatherCity || 'Fukuoka']; const forecastHtml = data.forecast.map(day => `<div class="flex flex-col items-center relative z-10"><span class="text-[10px] text-gray-400 font-mono mb-1">${day.d}</span><i class="fa-solid ${day.i} text-theme-dark text-lg mb-1"></i><span class="text-xs font-bold text-gray-500 font-hand">${day.h}°</span></div>`).join(''); return `<div class="hard-card p-5" data-id="weather"><i class="fa-solid fa-sun bg-icon -right-4 -top-4 text-7xl rotate-12 text-yellow-500"></i><div class="flex justify-between items-start mb-4 border-b border-gray-100 pb-3 relative z-10"><div><div class="flex items-center gap-2 cursor-pointer bg-white/80 px-2 py-1 rounded-lg hover:bg-white transition-colors border border-gray-100" onclick="toggleCity(); event.stopPropagation();"><h3 class="font-serif text-xl font-bold text-theme-dark">${appData.weatherCity}</h3><i class="fa-solid fa-rotate text-xs text-m-transport"></i></div><p class="text-xs text-gray-400 mt-1 pl-1 font-hand">${data.current.cond}</p></div><div class="flex flex-col items-end"><i class="fa-solid fa-grip-dots drag-handle mb-1 text-gray-300"></i><span class="text-4xl font-hand text-theme-dark">${data.current.temp}°</span></div></div><div class="flex justify-between px-1">${forecastHtml}</div></div>`; }
         function getCalcWidgetHTML() { 
             const liveIndicator = appData.isLiveRate ? '<span class="ml-2 w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse shadow-[0_0_5px_#4ade80]" title="即時匯率"></span>' : '';
-            return `<div class="hard-card p-5" data-id="calc"><i class="fa-solid fa-calculator bg-icon -right-4 bottom-2 text-6xl rotate-12 text-m-spot"></i><div class="flex justify-between items-start relative z-10"><div class="flex items-center"><h3 class="font-serif font-bold text-theme-dark mb-3">Rate Calc</h3>${liveIndicator} <span class="mb-3 text-[10px] bg-white/80 px-2 py-1 rounded ml-2 text-gray-500 cursor-pointer border border-gray-100 hover:bg-gray-50" onclick="changeRate()">x ${appData.rate.toFixed(3)}</span></div><i class="fa-solid fa-grip-dots drag-handle text-gray-300"></i></div><input type="text" id="calc-in" class="w-full bg-white/80 rounded-xl p-3 text-xl font-hand mb-3 outline-none input-polish relative z-10" placeholder="e.g. 500+200*3" onkeydown="if(event.key==='Enter') runCalc()"><div class="flex justify-between items-baseline px-1 relative z-10"><span class="text-xs text-gray-400">JPY to TWD</span><span id="calc-out" class="font-hand font-bold text-2xl text-m-food">0</span></div></div>`; 
+            return `<div class="hard-card p-5" data-id="calc"><i class="fa-solid fa-calculator bg-icon -right-4 bottom-2 text-6xl rotate-12 text-m-spot"></i><div class="flex justify-between items-start relative z-10"><div class="flex items-center"><h3 class="font-serif font-bold text-theme-dark mb-3">Rate Calc</h3>${liveIndicator} <span class="mb-3 text-[10px] bg-white/80 px-2 py-1 rounded ml-2 text-gray-500 cursor-pointer border border-gray-100 hover:bg-gray-50" onclick="changeRate()">x ${appData.rate.toFixed(3)}</span></div><i class="fa-solid fa-grip-dots drag-handle text-gray-300"></i></div><input type="text" id="calc-in" class="w-full p-3 text-xl font-hand mb-3 outline-none input-polish relative z-10" placeholder="e.g. 500+200*3" onkeydown="if(event.key==='Enter') runCalc()"><div class="flex justify-between items-baseline px-1 relative z-10"><span class="text-xs text-gray-400">JPY to TWD</span><span id="calc-out" class="font-hand font-bold text-2xl text-m-food">0</span></div></div>`; 
         }
         function getNoteWidgetHTML() { const hasImg=appData.note.img; return `<div class="hard-card p-5 note-card rotate-1" data-id="note" onclick="openEdit('note')"><div class="washi-tape" style="background-color:rgba(230, 200, 150, 0.5)"></div><div class="flex justify-between items-start mb-2 relative z-10"><h3 class="font-serif font-bold text-theme-dark"><i class="fa-solid fa-pen-nib mr-2 opacity-50"></i>Memo</h3><i class="fa-solid fa-grip-dots drag-handle text-yellow-600 opacity-50"></i></div><div class="relative z-10 min-h-[80px]">${hasImg?`<div class="mb-2 rounded-lg overflow-hidden border-2 border-white shadow-sm rotate-2 w-24 h-24 float-right ml-2"><img src="${appData.note.img}" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none';"></div>`:''}<p class="text-sm font-hand text-theme-dark whitespace-pre-wrap leading-relaxed">${appData.note.text || '點擊新增筆記...'}</p></div></div>`; }
-        function getShopWidgetHTML() { const items = appData.shopping.map((i, idx) => `<div class="shrink-0 hard-card w-32 p-3 flex flex-col items-center justify-center cursor-pointer relative group/item ${getRotate(idx)}" onclick="openEdit('shop', ${i.id}); event.stopPropagation();"><div class="w-full h-20 bg-gray-100 mb-2 overflow-hidden flex items-center justify-center rounded-lg border border-gray-100">${i.img ? `<img src="${i.img}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://placehold.co/128x80/EAE6D9/5C4033?text=IMG';">` : '<i class="fa-solid fa-bag-shopping text-gray-300 text-xl"></i>'}</div><span class="font-hand text-xs truncate w-full text-center mt-1 ${i.checked ? 'line-through text-gray-300' : 'text-theme-dark'}">${i.text}</span><div onclick="toggleShop(event, ${i.id})" class="absolute top-1 left-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm z-10">${i.checked ? '<i class="fa-solid fa-check text-xs text-m-spot"></i>' : ''}</div></div>`).join(''); return `<div class="hard-card p-5 overflow-visible" data-id="shop"><i class="fa-solid fa-receipt bg-icon right-10 -top-2 text-6xl -rotate-6 text-gray-400"></i><div class="flex justify-between items-center mb-3 relative z-10"><h3 class="font-serif font-bold text-theme-dark">Shopping List</h3><i class="fa-solid fa-grip-dots drag-handle text-gray-300"></i></div><div class="flex overflow-x-auto gap-4 pb-2 -mx-2 px-2 no-scrollbar relative z-10 min-h-[160px]">${items}<button onclick="openEdit('shop')" class="shrink-0 w-28 h-32 border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-center text-gray-300 hover:text-m-spot hover:border-m-spot transition-colors bg-white/50"><i class="fa-solid fa-plus text-xl"></i></button></div></div>`; }
+        function getShopWidgetHTML() { 
+            const items = appData.shopping.map((i, idx) => {
+                const imgHtml = i.img ? 
+                    `<img src="${i.img}" class="w-full h-full object-cover" onclick="event.stopPropagation(); openImageModal('${i.img}', '${i.text.replace(/'/g, "\\'")}')" onerror="this.onerror=null; this.src='https://placehold.co/128x80/EAE6D9/5C4033?text=IMG';">` : 
+                    '<i class="fa-solid fa-bag-shopping text-gray-300 text-xl"></i>';
+
+                return `<div class="shrink-0 hard-card w-32 p-3 flex flex-col items-center justify-center cursor-pointer relative group/item ${getRotate(idx)}" onclick="openEdit('shop', ${i.id}); event.stopPropagation();">
+                    <div class="w-full h-20 bg-gray-100 mb-2 overflow-hidden flex items-center justify-center rounded-lg border border-gray-100">${imgHtml}</div>
+                    <span class="font-hand text-xs truncate w-full text-center mt-1 ${i.checked ? 'line-through text-gray-300' : 'text-theme-dark'}">${i.text}</span>
+                    <div onclick="toggleShop(event, ${i.id})" class="absolute top-1 left-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm z-10">${i.checked ? '<i class="fa-solid fa-check text-xs text-m-spot"></i>' : ''}</div>
+                </div>`;
+            }).join('');
+            
+            return `<div class="hard-card p-5 overflow-visible" data-id="shop"><i class="fa-solid fa-receipt bg-icon right-10 -top-2 text-6xl -rotate-6 text-gray-400"></i><div class="flex justify-between items-center mb-3 relative z-10"><h3 class="font-serif font-bold text-theme-dark">Shopping List</h3><i class="fa-solid fa-grip-dots drag-handle text-gray-300"></i></div><div class="flex overflow-x-auto gap-4 pb-2 -mx-2 px-2 no-scrollbar relative z-10 min-h-[160px]">${items}<button onclick="openEdit('shop')" class="shrink-0 w-28 h-32 border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-center text-gray-300 hover:text-m-spot hover:border-m-spot transition-colors bg-white/50"><i class="fa-solid fa-plus text-xl"></i></button></div></div>`; 
+        }
 
         // --- Other Modules ---
         function renderMap() { 
             const container = document.getElementById('app-container');
             const chipsHtml = FILTER_OPTIONS.map(opt => `<button onclick="toggleMapFilter('${opt.key}')" class="map-filter-chip whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold border transition-all shadow-sm ${mapFilters === opt.key ? `${opt.color} text-white border-transparent active` : 'bg-white text-theme-dark border-gray-200'}">${opt.label}</button>`).join('');
-            container.innerHTML = `<div class="absolute top-4 left-4 right-4 z-[500] flex gap-2 overflow-x-auto no-scrollbar pb-2">${chipsHtml}</div><div id="map" class="w-full h-full z-10"></div>`;
+            
+            // 1. Inject map container and UI elements
+            container.innerHTML = `
+                <div class="absolute top-4 left-4 right-4 z-[500] flex gap-2 overflow-x-auto no-scrollbar pb-2">${chipsHtml}</div>
+                <div id="map" class="w-full h-full z-10"></div>
+                <button onclick="locateMe()" class="absolute bottom-36 right-4 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-blue-500 z-[400] tap-effect"><i class="fa-solid fa-crosshairs"></i></button>
+            `;
+
+            // 2. Initialize map after DOM structure is set, with a slight delay for layout calculation
             setTimeout(() => { 
                 if(mapInstance) { mapInstance.remove(); mapInstance = null; } 
+                
+                // Initialize map with a default view
                 mapInstance = L.map('map', {zoomControl: false}).setView([33.5902, 130.4017], 13); 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '' }).addTo(mapInstance); 
+                
                 const bounds=[]; const latlngs=[];
                 let dayItems = appData.itinerary.filter(i => i.day === appData.currentDay).sort((a, b) => a.time.localeCompare(b.time));
                 if(mapFilters) dayItems = dayItems.filter(i => i.type === mapFilters);
+                
                 dayItems.forEach((item, index) => { 
-                    const lat = item.lat || (33.5902 + (Math.random()-0.5)*0.05); const lng = item.lng || (130.4017 + (Math.random()-0.5)*0.05); 
+                    const lat = item.lat || (33.5902 + (Math.random()-0.5)*0.05); 
+                    const lng = item.lng || (130.4017 + (Math.random()-0.5)*0.05); 
                     const point = [lat, lng]; latlngs.push(point); bounds.push(point);
                     const icon = L.divIcon({className: 'custom-icon', html: `<div class="w-8 h-8 rounded-full bg-theme-dark border-2 border-white shadow-lg flex items-center justify-center text-white font-bold font-mono text-sm">${index+1}</div>`, iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32]}); 
                     L.marker(point, {icon: icon}).addTo(mapInstance).bindPopup(`<b>${item.title}</b><br>${item.time}`); 
                 }); 
-                if(!mapFilters && latlngs.length > 1) L.polyline(latlngs, {color: '#8EA4B5', weight: 4, opacity: 0.8, dashArray: '10, 10'}).addTo(mapInstance);
-                if(bounds.length) mapInstance.fitBounds(bounds, {padding:[50,50], maxZoom: 15}); 
-                setTimeout(()=>mapInstance.invalidateSize(),200); 
-
-                // NEW: Add locate me button
-                container.innerHTML += `<button onclick="locateMe()" class="absolute bottom-36 right-4 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-blue-500 z-[400] tap-effect"><i class="fa-solid fa-crosshairs"></i></button>`;
-            }, 100); 
+                
+                // Draw polyline
+                if(!mapFilters && latlngs.length > 1) {
+                    L.polyline(latlngs, {color: '#8EA4B5', weight: 4, opacity: 0.8, dashArray: '10, 10'}).addTo(mapInstance);
+                }
+                
+                // Fit bounds or reset view
+                if(bounds.length) {
+                    mapInstance.fitBounds(bounds, {padding:[50,50], maxZoom: 15}); 
+                }
+                
+                // Crucial step for external hosting: force size recalculation
+                mapInstance.invalidateSize();
+            }, 150); // Increased delay for external stability
         }
 
         function renderWallet() { 
@@ -696,8 +752,14 @@
             let listHtml = vouchers.map((v, idx) => {
                 const conf = VOUCHER_CATS[v.type] || VOUCHER_CATS['OTHER'];
                 const rotate = ['rotate-v-1', 'rotate-v-2', 'rotate-v-3'][idx % 3];
-                return `<div class="hard-card p-3 cursor-pointer ${rotate} group relative transition-transform hover:z-10" onclick="openEdit('info', ${v.id})"><div class="washi-tape" style="background-color:${conf.tape}; width: 50px; height: 16px; top: -5px;"></div><div class="aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden mb-2 relative border border-gray-100">${v.img ? `<img src="${v.img}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://placehold.co/128x96/EAE6D9/5C4033?text=VOUCHER';">` : `<div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fa-solid fa-image text-2xl"></i></div>`}<div class="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-white flex items-center justify-center text-xs shadow-sm ${conf.color} text-white"><i class="fa-solid ${conf.icon}"></i></div></div><h4 class="font-bold text-sm text-theme-dark leading-tight mb-1 truncate">${v.title}</h4>${v.text ? `<p class="text-[10px] text-gray-400 line-clamp-2 leading-relaxed font-hand">${v.text}</p>` : ''}</div>`;
+                
+                const imgHtml = v.img ? 
+                    `<img src="${v.img}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://placehold.co/128x96/EAE6D9/5C4033?text=VOUCHER';" onclick="event.stopPropagation(); openImageModal('${v.img}', '${v.title.replace(/'/g, "\\'")}')">` : 
+                    `<div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fa-solid fa-image text-2xl"></i></div>`;
+                    
+                return `<div class="hard-card p-3 cursor-pointer ${rotate} group relative transition-transform hover:z-10" onclick="openEdit('info', ${v.id})"><div class="washi-tape" style="background-color:${conf.tape}; width: 50px; height: 16px; top: -5px;"></div><div class="aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden mb-2 relative border border-gray-100">${imgHtml}<div class="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-white flex items-center justify-center text-xs shadow-sm ${conf.color} text-white"><i class="fa-solid ${conf.icon}"></i></div></div><h4 class="font-bold text-sm text-theme-dark leading-tight mb-1 truncate">${v.title}</h4>${v.text ? `<p class="text-[10px] text-gray-400 line-clamp-2 leading-relaxed font-hand">${v.text}</p>` : ''}</div>`;
             }).join('');
+            
             listHtml += `<div class="add-voucher-card group" onclick="openEdit('info')"><div class="w-12 h-12 rounded-full bg-m-other/20 flex items-center justify-center mb-2 group-active:scale-90 transition-transform"><i class="fa-solid fa-plus text-xl text-m-other"></i></div><span class="text-xs font-bold text-gray-400 tracking-widest font-hand">ADD NEW</span></div>`;
             // Calculate size dynamically
             const tempStr = JSON.stringify(appData); 
