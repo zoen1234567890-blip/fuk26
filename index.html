@@ -657,7 +657,7 @@
                 return `<div class="shrink-0 hard-card w-32 p-3 flex flex-col items-center justify-center cursor-pointer relative group/item ${getRotate(idx)}" onclick="openEdit('shop', ${i.id}); event.stopPropagation();">
                         <div class="w-full h-20 bg-gray-100 mb-2 overflow-hidden flex items-center justify-center rounded-lg border border-gray-100" ${clickableImg}>${imgEl}</div>
                         <span class="font-hand text-xs truncate w-full text-center mt-1 ${i.checked ? 'line-through text-gray-300' : 'text-theme-dark'}">${i.text}</span>
-                        <div onclick="toggleShop(event, ${i.id})" class="absolute top-1 left-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm z-10">${i.checked ? '<i class="fa-solid fa-check"></i>' : ''}</div>
+                        <div onclick="toggleShop(event, ${i.id})" class="absolute top-1 left-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm z-10">${i.checked ? '<i class="fa-solid fa-check text-xs text-m-spot"></i>' : ''}</div>
                     </div>`;
             }).join(''); 
             
